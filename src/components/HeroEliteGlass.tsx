@@ -2,9 +2,10 @@ import React, { useRef, useMemo } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { MeshTransmissionMaterial, Environment, Float, OrthographicCamera, useAspect } from '@react-three/drei';
 import * as THREE from 'three';
+import { useIsMobile } from '../hooks/useIsMobile';
 
 // Our core abstract shape - a beautifully smoothed geometric form
-function GlassSculpture() {
+function GlassSculpture({ isMobile }: { isMobile: boolean }) {
     const meshRef = useRef<THREE.Mesh>(null!);
     const materialRef = useRef<any>(null!);
 
@@ -26,26 +27,28 @@ function GlassSculpture() {
     });
 
     return (
-        <Float floatIntensity={2} rotationIntensity={1} speed={1.5}>
+        <Float floatIntensity={isMobile ? 1 : 2} rotationIntensity={isMobile ? 0.5 : 1} speed={isMobile ? 1 : 1.5}>
             <mesh ref={meshRef} position={[0, 0, 0]} scale={2.5}>
-                {/* TorusKnot is the classic shape for demonstrating complex glass refraction */}
-                <icosahedronGeometry args={[1.5, 6]} />
+                {/* icosahedronGeometry detail reduced on mobile (6 -> 3 or 4) */}
+                <icosahedronGeometry args={[1.5, isMobile ? 3 : 6]} />
                 <MeshTransmissionMaterial
                     ref={materialRef}
                     background={new THREE.Color('#010103')}
                     transmission={1}
-                    roughness={0.05}
+                    roughness={isMobile ? 0.1 : 0.05}
                     thickness={2.5}
                     ior={1.33}
                     chromaticAberration={0.15}
-                    anisotropy={0.3}
-                    distortion={0.1}
-                    distortionScale={0.5}
-                    temporalDistortion={0.2}
+                    anisotropy={isMobile ? 0.1 : 0.3}
+                    distortion={isMobile ? 0 : 0.1}
+                    distortionScale={isMobile ? 0 : 0.5}
+                    temporalDistortion={isMobile ? 0 : 0.2}
                     clearcoat={1}
                     attenuationDistance={1}
                     attenuationColor="#ffffff"
                     color="#ffffff"
+                    samples={isMobile ? 4 : 16} // Drastically reduce samples on mobile
+                    resolution={isMobile ? 256 : 1024} // Lower resolution for refraction buffer
                 />
             </mesh>
         </Float>
@@ -53,11 +56,14 @@ function GlassSculpture() {
 }
 
 // Background Elements to refract through the glass.
-function BackgroundOrbs() {
+function BackgroundOrbs({ isMobile }: { isMobile: boolean }) {
     const { width, height } = useThree((state) => state.viewport);
     const orb1Ref = useRef<THREE.Mesh>(null!);
     const orb2Ref = useRef<THREE.Mesh>(null!);
     const orb3Ref = useRef<THREE.Mesh>(null!);
+
+    // Reduce sphere segments on mobile
+    const segments = isMobile ? 16 : 32;
 
     useFrame((state) => {
         const t = state.clock.getElapsedTime() * 0.5;
@@ -81,19 +87,19 @@ function BackgroundOrbs() {
         <group position={[0, 0, -5]}>
             {/* Orb 1: Vercel/Nextjs Electric Cyan */}
             <mesh ref={orb1Ref}>
-                <sphereGeometry args={[1.5, 32, 32]} />
+                <sphereGeometry args={[1.5, segments, segments]} />
                 <meshBasicMaterial color="#00e5ff" toneMapped={false} />
             </mesh>
 
             {/* Orb 2: Deep Purple/Magenta */}
             <mesh ref={orb2Ref}>
-                <sphereGeometry args={[2.5, 32, 32]} />
+                <sphereGeometry args={[2.5, segments, segments]} />
                 <meshBasicMaterial color="#651fff" toneMapped={false} />
             </mesh>
 
             {/* Orb 3: Brilliant White/Silver core */}
             <mesh ref={orb3Ref}>
-                <sphereGeometry args={[0.8, 32, 32]} />
+                <sphereGeometry args={[0.8, segments, segments]} />
                 <meshBasicMaterial color="#ffffff" toneMapped={false} />
             </mesh>
         </group>
@@ -101,11 +107,16 @@ function BackgroundOrbs() {
 }
 
 export default function HeroEliteGlass() {
+    const isMobile = useIsMobile();
+
     return (
         <div className="absolute inset-0 z-0 bg-[#010102] overflow-hidden mix-blend-screen">
-            <Canvas dpr={[1, 2]} gl={{ antialias: true, alpha: false }}>
+            <Canvas
+                dpr={isMobile ? 1 : [1, 2]}
+                gl={{ antialias: !isMobile, alpha: false, powerPreference: 'high-performance' }}
+            >
                 {/* We use an Orthographic camera for a more architectural, graphic design look */}
-                <OrthographicCamera makeDefault position={[0, 0, 10]} zoom={100} />
+                <OrthographicCamera makeDefault position={[0, 0, 10]} zoom={isMobile ? 70 : 100} />
 
                 {/* The beautiful studio lighting environment for the glass to reflect */}
                 <Environment preset="city" />
@@ -114,10 +125,10 @@ export default function HeroEliteGlass() {
                 <directionalLight position={[10, 10, 10]} intensity={2} />
                 <directionalLight position={[-10, -10, -10]} intensity={0.5} color="#00e5ff" />
 
-                <BackgroundOrbs />
+                <BackgroundOrbs isMobile={isMobile} />
 
                 {/* The main piece */}
-                <GlassSculpture />
+                <GlassSculpture isMobile={isMobile} />
             </Canvas>
 
             {/* Extreme luxury vignettes to blend perfectly into the black page body */}

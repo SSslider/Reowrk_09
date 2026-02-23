@@ -6,6 +6,7 @@ import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
 import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
+import { useIsMobile } from '../hooks/useIsMobile';
 
 extend({ EffectComposer, RenderPass, UnrealBloomPass, OutputPass });
 
@@ -141,7 +142,7 @@ const fragmentShader = `
 
 // --- COMPONENT ---
 
-const LiquidSurface: React.FC = () => {
+const LiquidSurface: React.FC<{ isMobile: boolean }> = ({ isMobile }) => {
   const materialRef = useRef<THREE.ShaderMaterial>(null!);
 
   useFrame((state) => {
@@ -154,14 +155,14 @@ const LiquidSurface: React.FC = () => {
     const targetZ = -p.y * 25;
 
     const currentMouse = materialRef.current.uniforms.uMouse.value as THREE.Vector2;
-    currentMouse.x += (targetX - currentMouse.x) * 0.05;
-    currentMouse.y += (targetZ - currentMouse.y) * 0.05;
+    currentMouse.x += (targetX - currentMouse.x) * (isMobile ? 0.02 : 0.05);
+    currentMouse.y += (targetZ - currentMouse.y) * (isMobile ? 0.02 : 0.05);
   });
 
   return (
     <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -4, 0]}>
-      {/* High res plane for smooth curves */}
-      <planeGeometry args={[100, 100, 250, 250]} />
+      {/* Reduced resolution plane on mobile (250x250 -> 100x100) */}
+      <planeGeometry args={[100, 100, isMobile ? 100 : 250, isMobile ? 100 : 250]} />
       <shaderMaterial
         ref={materialRef}
         vertexShader={vertexShader}
@@ -179,17 +180,19 @@ const LiquidSurface: React.FC = () => {
 
 // --- POST PROCESSING ---
 
-const CustomEffects: React.FC = () => {
+const CustomEffects: React.FC<{ isMobile: boolean }> = ({ isMobile }) => {
   const { gl, scene, camera, size } = useThree();
   const composer = useRef<EffectComposer | null>(null);
 
   useEffect(() => {
-    const renderTarget = new THREE.WebGLRenderTarget(size.width, size.height, {
+    // Significantly reduce resolution/samples on mobile
+    const resScale = isMobile ? 0.5 : 1.0;
+    const renderTarget = new THREE.WebGLRenderTarget(size.width * resScale, size.height * resScale, {
       minFilter: THREE.LinearFilter,
       magFilter: THREE.LinearFilter,
       format: THREE.RGBAFormat,
       stencilBuffer: false,
-      samples: 4 // MSAA for polished edges
+      samples: isMobile ? 1 : 4 // Disable MSAA on mobile
     });
 
     const comp = new EffectComposer(gl, renderTarget);
@@ -198,10 +201,10 @@ const CustomEffects: React.FC = () => {
 
     // Highly restrained, premium bloom. Not blinding.
     const bloomPass = new UnrealBloomPass(
-      new THREE.Vector2(size.width, size.height),
-      0.35, // intensity (Tuned down drastically from 1.5)
-      1.0, // radius
-      0.3  // threshold (Only brightest specular hits bloom)
+      new THREE.Vector2(size.width * resScale, size.height * resScale),
+      0.35,
+      1.0,
+      0.3
     );
     comp.addPass(bloomPass);
 
@@ -214,7 +217,7 @@ const CustomEffects: React.FC = () => {
       comp.dispose();
       renderTarget.dispose();
     };
-  }, [gl, scene, camera, size]);
+  }, [gl, scene, camera, size, isMobile]);
 
   useFrame(() => {
     composer.current?.render();
@@ -225,7 +228,7 @@ const CustomEffects: React.FC = () => {
 
 // --- SCENE SETUP ---
 
-const Scene: React.FC = () => {
+const Scene: React.FC<{ isMobile: boolean }> = ({ isMobile }) => {
   useFrame(({ camera, clock }) => {
     // Cinematic, extremely slow breathing drift
     const t = clock.getElapsedTime();
@@ -239,26 +242,28 @@ const Scene: React.FC = () => {
       <color attach="background" args={['#000000']} />
       <fog attach="fog" args={['#000000', 10, 35]} />
 
-      <LiquidSurface />
-      <CustomEffects />
+      <LiquidSurface isMobile={isMobile} />
+      <CustomEffects isMobile={isMobile} />
     </>
   );
 };
 
 export default function HeroPremiumNixtio() {
+  const isMobile = useIsMobile();
+
   return (
     <div className="absolute inset-0 z-0 bg-black overflow-hidden">
       <Canvas
         camera={{ position: [0, 6, 18], fov: 45, near: 0.1, far: 100 }}
-        dpr={typeof window !== 'undefined' ? Math.min(window.devicePixelRatio, 2) : 1}
+        dpr={isMobile ? 1 : (typeof window !== 'undefined' ? Math.min(window.devicePixelRatio, 2) : 1)}
         gl={{
           powerPreference: 'high-performance',
-          antialias: true,
+          antialias: !isMobile,
           depth: true,
           alpha: false,
         }}
       >
-        <Scene />
+        <Scene isMobile={isMobile} />
       </Canvas>
       {/* Vignette Overlays for deep gradient blending into the page */}
       <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(circle_at_center,transparent_0%,rgba(0,0,0,0.85)_100%)]" />

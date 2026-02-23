@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../lib/utils';
+import { useIsMobile } from '../hooks/useIsMobile';
 
 interface Project {
   id: string;
@@ -18,8 +19,8 @@ const PROJECTS: Project[] = [
     name: 'Payoneer',
     year: '2025',
     categories: ['עיצוב אתרים', 'אנימציה'],
-    imageUrl: 'https://framerusercontent.com/images/GUbDcFIEEb7WZdlIuJ32Hr8LTmA.webp?width=1514&height=1142',
-    hoverImageUrl: 'https://framerusercontent.com/images/m5PLXFH74W1WqgYOOIvYvd44ik.webp?width=1514&height=1142',
+    imageUrl: 'https://framerusercontent.com/images/GUbDcFIEEb7WZdlIuJ32Hr8LTmA.webp',
+    hoverImageUrl: 'https://framerusercontent.com/images/m5PLXFH74W1WqgYOOIvYvd44ik.webp',
     link: '#'
   },
   {
@@ -27,8 +28,8 @@ const PROJECTS: Project[] = [
     name: 'KazaSwap',
     year: '2024',
     categories: ['עיצוב פלטפורמות', 'עיצוב דפי נחיתה', 'פיתוח', 'זהות מותגית', 'אנימציה'],
-    imageUrl: 'https://framerusercontent.com/images/S8bd5xR4VHO9WkbSZbfGbmiAd0Q.webp?width=3200&height=2400',
-    hoverImageUrl: 'https://framerusercontent.com/images/G2IMjXfrdnEtvcAqCOcruIQZEvA.webp?width=2400&height=1800',
+    imageUrl: 'https://framerusercontent.com/images/S8bd5xR4VHO9WkbSZbfGbmiAd0Q.webp',
+    hoverImageUrl: 'https://framerusercontent.com/images/G2IMjXfrdnEtvcAqCOcruIQZEvA.webp',
     link: '#'
   },
   {
@@ -36,8 +37,8 @@ const PROJECTS: Project[] = [
     name: 'Passion Finder',
     year: '2023',
     categories: ['עיצוב אפליקציות', 'זהות מותגית', 'רשתות חברתיות', 'אנימציה', 'עיצוב אתרים'],
-    imageUrl: 'https://framerusercontent.com/images/20qqrsaEWf7sswqrRj3D5yBKDg.webp?width=3200&height=2400',
-    hoverImageUrl: 'https://framerusercontent.com/images/GXZiM0leRCebaqfhUhZQIn6gLQ.jpg?width=3200&height=2400',
+    imageUrl: 'https://framerusercontent.com/images/20qqrsaEWf7sswqrRj3D5yBKDg.webp',
+    hoverImageUrl: 'https://framerusercontent.com/images/GXZiM0leRCebaqfhUhZQIn6gLQ.jpg',
     link: '#'
   },
   {
@@ -45,8 +46,8 @@ const PROJECTS: Project[] = [
     name: 'LinkMatch',
     year: '2023-2024',
     categories: ['מחקר ואפיון', 'UX ו-Wireframes', 'עיצוב מוצר', 'פיתוח אתרים', 'וורדפרס'],
-    imageUrl: 'https://framerusercontent.com/images/SScVyCDvGAjTwFpesl42oSKTcWA.webp?width=3200&height=2400',
-    hoverImageUrl: 'https://framerusercontent.com/images/SiwPITaKWerRJxJ0xlusS0vyCQ.jpg?width=3200&height=2400',
+    imageUrl: 'https://framerusercontent.com/images/SScVyCDvGAjTwFpesl42oSKTcWA.webp',
+    hoverImageUrl: 'https://framerusercontent.com/images/SiwPITaKWerRJxJ0xlusS0vyCQ.jpg',
     link: '#'
   },
   {
@@ -54,8 +55,8 @@ const PROJECTS: Project[] = [
     name: 'Xefag',
     year: '2023',
     categories: ['עיצוב אתרים', 'אנימציה'],
-    imageUrl: 'https://framerusercontent.com/images/FUH7qQwH5Qa7dJ6PmFoFGhUGO10.webp?width=3200&height=2400',
-    hoverImageUrl: 'https://framerusercontent.com/images/MtMuuLRfuWCe4Q44OTbPBR63Aw.jpg?width=3200&height=2400',
+    imageUrl: 'https://framerusercontent.com/images/FUH7qQwH5Qa7dJ6PmFoFGhUGO10.webp',
+    hoverImageUrl: 'https://framerusercontent.com/images/MtMuuLRfuWCe4Q44OTbPBR63Aw.jpg',
     link: '#'
   },
   {
@@ -63,14 +64,19 @@ const PROJECTS: Project[] = [
     name: 'Vetsie',
     year: '2022',
     categories: ['עיצוב אתרים', 'אנימציה', 'פיתוח אתרים', 'זהות מותגית'],
-    imageUrl: 'https://framerusercontent.com/images/WG7tDEjw2ky38s0rdepmJYIlCo.webp?width=3200&height=2400',
-    hoverImageUrl: 'https://framerusercontent.com/images/F3pnw8xdta04bosZNeLjgu4Fc.webp?width=3200&height=2400',
+    imageUrl: 'https://framerusercontent.com/images/WG7tDEjw2ky38s0rdepmJYIlCo.webp',
+    hoverImageUrl: 'https://framerusercontent.com/images/F3pnw8xdta04bosZNeLjgu4Fc.webp',
     link: '#'
   }
 ];
 
-const ProjectCard: React.FC<{ project: Project }> = ({ project }) => {
+const ProjectCard: React.FC<{ project: Project; isMobile: boolean }> = ({ project, isMobile }) => {
   const [isHovered, setIsHovered] = useState(false);
+
+  // Responsive image width parameter
+  const imgWidth = isMobile ? 800 : 1600;
+  const mainImageUrl = `${project.imageUrl}?width=${imgWidth}`;
+  const hoverImageUrl = `${project.hoverImageUrl}?width=${imgWidth}`;
 
   return (
     <motion.div
@@ -78,8 +84,8 @@ const ProjectCard: React.FC<{ project: Project }> = ({ project }) => {
       initial={{ opacity: 0, y: 20 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
+      onMouseEnter={() => !isMobile && setIsHovered(true)}
+      onMouseLeave={() => !isMobile && setIsHovered(false)}
     >
       <a href={project.link} className="block w-full h-full" onClick={e => e.preventDefault()}>
         <div className="flex items-center justify-between px-6 py-[18px] bg-white relative z-10">
@@ -88,9 +94,9 @@ const ProjectCard: React.FC<{ project: Project }> = ({ project }) => {
               {project.name}
             </h3>
 
-            {/* Categories Overlay - Adjusted positioning to ensure it stays within bounds */}
+            {/* Categories Overlay */}
             <AnimatePresence>
-              {isHovered && (
+              {isHovered && !isMobile && (
                 <motion.div
                   className="absolute left-0 top-0 flex flex-col gap-1 pointer-events-none"
                   initial={{ opacity: 0, x: -10 }}
@@ -113,24 +119,27 @@ const ProjectCard: React.FC<{ project: Project }> = ({ project }) => {
           </div>
         </div>
 
-        <div className="relative aspect-[1.33492/1] overflow-hidden">
+        <div className="relative aspect-[1.33492/1] overflow-hidden bg-neutral-100">
           {/* Main Image */}
           <motion.img
-            src={project.imageUrl}
+            src={mainImageUrl}
             alt={project.name}
+            loading="lazy"
             className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 ease-[cubic-bezier(0.25,1,0.5,1)]"
             animate={{ scale: isHovered ? 1.06 : 1, opacity: isHovered ? 0 : 1 }}
             transition={{ duration: 0.7, ease: [0.33, 1, 0.68, 1] }}
           />
-          {/* Hover Image */}
-          <motion.img
-            src={project.hoverImageUrl}
-            alt={`${project.name} hover`}
-            className="absolute inset-0 w-full h-full object-cover"
-            initial={{ opacity: 0, scale: 1.15 }}
-            animate={{ opacity: isHovered ? 1 : 0, scale: isHovered ? 1 : 1.15 }}
-            transition={{ duration: 0.7, ease: [0.33, 1, 0.68, 1] }}
-          />
+          {/* Hover Image (Desktop Only) */}
+          {!isMobile && (
+            <motion.img
+              src={hoverImageUrl}
+              alt={`${project.name} hover`}
+              className="absolute inset-0 w-full h-full object-cover"
+              initial={{ opacity: 0, scale: 1.15 }}
+              animate={{ opacity: isHovered ? 1 : 0, scale: isHovered ? 1 : 1.15 }}
+              transition={{ duration: 0.7, ease: [0.33, 1, 0.68, 1] }}
+            />
+          )}
           {/* Dark Overlay on Hover for Header Area */}
           <motion.div
             className="absolute inset-x-0 top-0 h-[100px] bg-gradient-to-b from-black/80 to-transparent pointer-events-none"
@@ -145,6 +154,8 @@ const ProjectCard: React.FC<{ project: Project }> = ({ project }) => {
 };
 
 const Projects: React.FC = () => {
+  const isMobile = useIsMobile();
+
   return (
     <section id="projects" className="w-full bg-[#FFFFFF] py-20 px-4 sm:px-8 md:px-12 lg:px-20 font-sans selection:bg-black selection:text-white">
       <div className="max-w-[1520px] mx-auto flex flex-col gap-[90px]">
@@ -152,7 +163,6 @@ const Projects: React.FC = () => {
         {/* Top Header Section */}
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 items-start">
           <div className="lg:col-span-1 pt-2">
-            {/* Increased max-width to prevent Hebrew text clipping */}
             <p className="text-[16px] font-medium text-[#0A0A0A]/60 tracking-[-0.6px] leading-relaxed max-w-[200px] balance">
               פתרונות ייחודיים<br />שמייצרים לידים
             </p>
@@ -185,7 +195,7 @@ const Projects: React.FC = () => {
         {/* Projects Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-20">
           {PROJECTS.map(project => (
-            <ProjectCard key={project.id} project={project} />
+            <ProjectCard key={project.id} project={project} isMobile={isMobile} />
           ))}
         </div>
 
