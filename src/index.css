@@ -1,0 +1,38 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 0 0% 3.9%;
+  }
+ 
+  body {
+    @apply bg-neutral-50 text-neutral-900;
+  }
+}
+
+/* Custom Scrollbar - Sleek Dark Mode */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #010102;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #333;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+/* Premium Text Selection */
+::selection {
+  background: rgba(0, 229, 255, 0.3); /* Cyan tint */
+  color: white;
+}
